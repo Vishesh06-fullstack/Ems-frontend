@@ -1,5 +1,6 @@
 import { Loader2Icon, LockIcon, X } from 'lucide-react'
 import React, { useState } from 'react'
+import api from '../../api/axios'
 
 const ChangePasswordModel = ({open, onClose}) => {
     const [loading, setLoading] = useState(false)
@@ -7,6 +8,27 @@ const ChangePasswordModel = ({open, onClose}) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (loading) return;
+
+        const form = e.currentTarget;
+        setLoading(true);
+        setMessage({ type: '', text: '' });
+
+        const formData = new FormData(form);
+        const payload = Object.fromEntries(formData.entries());
+
+        try {
+            await api.post('/auth/change-password', payload);
+            setMessage({ type: 'success', text: 'Password updated successfully' });
+            form.reset();
+        } catch (error) {
+            setMessage({
+                type: 'error',
+                text: error?.response?.data?.error || error.message,
+            });
+        } finally {
+            setLoading(false);
+        }
     }
 
     if(!open) return null;
@@ -45,7 +67,7 @@ const ChangePasswordModel = ({open, onClose}) => {
                     <button type='button' onClick={onClose} className='btn-secondary flex-1'>
                         Cancel
                     </button>
-                    <button type='button' disabled={loading} className='btn-primary flex-1 flex justify-center items-center gap-2'>
+                    <button type='submit' disabled={loading} className='btn-primary flex-1 flex justify-center items-center gap-2'>
                         {loading && <Loader2Icon className='w-4 h-4 animate-spin'/>}
                         Update Password
                     </button>

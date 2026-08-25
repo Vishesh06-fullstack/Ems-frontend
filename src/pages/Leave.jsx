@@ -4,19 +4,28 @@ import Loading from "/src/components/Loading"
 import {ThermometerIcon, UmbrellaIcon, PalmtreeIcon, PlusIcon} from "lucide-react"
 import LeaveHistory from '../components/leave/LeaveHistory'
 import ApplyLeaveModal from '../components/leave/ApplyLeaveModal'
+import { useAuth } from '../../context/AuthContext'
+import api from '../../api/axios'
 
 const Leave = () => {
+  const {user } = useAuth();
   const [leaves, setLeaves] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [isDeleted, setDeleted] = useState(false);
-  const isAdmin = false;
+  const isAdmin = user?.role === "ADMIN";
 
-  const fetchLeaves = useCallback(()=>{
-    setLeaves(dummyLeaveData)
-    setTimeout(()=>{
-      setLoading(false);
-    },1000)
+  const fetchLeaves = useCallback(async()=>{
+      try {
+        const resp = await api.get('/leave');
+        setLeaves(resp.data.data || []);
+        if(resp.data.employee?.isDeleted) setDeleted(true);
+      } catch (error) {
+        toast.error(error?.response?.data?.error || error.message);
+      }
+      finally{
+        setLoading(false)
+      }
   },[])
 
   useEffect(()=>{

@@ -1,12 +1,14 @@
 import React, { useState } from 'react'
 import { Loader2, Plus, X } from 'lucide-react'
+import api from '../../../api/axios'
+import toast from 'react-hot-toast'
 
 const GeneratePayslipForm = ({ employees, onSuccess }) => {
-    const [isOpen, setisOpen] = useState(false)
+    const [isOpen, setIsOpen] = useState(false)
     const [loading, setLoading] = useState(false)
 
     if (!isOpen) return (
-        <button onClick={() => setisOpen(true)}
+        <button onClick={() => setIsOpen(true)}
             className='btn-primary flex items-center gap-2'>
             <Plus className='w-4 h-4' /> Generate Payslip
         </button>
@@ -14,14 +16,28 @@ const GeneratePayslipForm = ({ employees, onSuccess }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
+        const formData = new FormData(e.currentTarget);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+            await api.post("/payslips" , data);
+            toast.success("Payslip generated");
+            setIsOpen(false);
+            onSuccess?.();
+        } catch (error) {
+            toast.error(error.response?.data?.error || error?.message);
+        } finally {
+            setLoading(false);
+        }
     }
 
     return (
         <div className='fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4'>
             <div className='card max-w-lg w-full p-6 animate-slide-up'>
                 <div className='flex justify-between items-center mb-6'>
-                    <h3 className='text-lg font-blod text-slate-900'>Generate Monthly Payslip</h3>
-                    <button onClick={() => setisOpen(false)} className='text-slate-400 hoer:text-slate-600 p-11'>
+                    <h3 className='text-lg font-bold text-slate-900'>Generate Monthly Payslip</h3>
+                    <button onClick={() => setIsOpen(false)} className='text-slate-400 hover:text-slate-600 p-1'>
                         <X size={20} />
                     </button>
                 </div>
@@ -29,19 +45,20 @@ const GeneratePayslipForm = ({ employees, onSuccess }) => {
                     {/* select employee  */}
                     <div>
                         <label className='block text-sm font-medium text-slate-700 mb-2'>Employee</label>
-                        <select name="employeeId" required>
+                        <select name="employeeId" required defaultValue="">
+                            <option value="" disabled>Select employee</option>
                             {employees.map((e) => (
-                                <option key={e.id} value={e.id}>
+                                <option key={e.id || e._id} value={e.id || e._id}>
                                     {e.firstName} {e.lastName} ({e.position})
                                 </option>
                             ))}</select>
                     </div>
 
                     {/* select month & year  */}
-                    <div className='grid grid-col-2 gap-4'>
+                    <div className='grid grid-cols-2 gap-4'>
                         <div>
                             <label className='block text-sm font-medium text-slate-700 mb-2'>month</label>
-                            <select name="month">
+                            <select name="month" defaultValue={new Date().getMonth() + 1}>
                                 {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
                                     <option key={m} value={m}>
                                         {m}
@@ -51,31 +68,31 @@ const GeneratePayslipForm = ({ employees, onSuccess }) => {
                         </div>
                         <div>
                             <label className='block text-sm font-medium text-slate-700 mb-2'>Year</label>
-                            <input type='number' name='year' defaultValue={new Date().getFullYear()} />
+                            <input type='number' name='year' required min='2000' defaultValue={new Date().getFullYear()} />
                         </div>
                     </div>
 
                     {/* basic salary  */}
                     <div>
                         <label className='block text-sm font-medium text-slate-700 mb-2'>Basic Salary</label>
-                        <input type='number' name='basicSalary' required placeholder='5000' />
+                            <input type='number' name='basicSalary' required min='0' step='0.01' placeholder='5000' />
                     </div>
 
                     {/* allowances & deductions  */}
                     <div className='grid grid-cols-2 gap-4'>
                         <div>
                             <label className='block text-sm font-medium text-slate-700 mb-2'>Allowances</label>
-                            <input type='number' name='allowances' defaultValue='0' />
+                            <input type='number' name='allowances' min='0' step='0.01' defaultValue='0' />
                         </div>
                         <div>
                         <label className='block text-sm font-medium text-slate-700 mb-2'>Deduction</label>
-                        <input type='number' name='deduction' defaultValue='0' />
+                        <input type='number' name='deductions' min='0' step='0.01' defaultValue='0' />
                     </div>
                     </div>
 
                     {/* button  */}
                     <div className='flex justify-end gap-3 pt-2'>
-                        <button onClick={()=> setisOpen(false)} type='button' className='btn-secondary'>
+                        <button onClick={()=> setIsOpen(false)} type='button' className='btn-secondary'>
                             Cancel
                         </button>
 
